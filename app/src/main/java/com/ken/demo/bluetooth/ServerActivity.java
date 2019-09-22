@@ -44,11 +44,17 @@ public class ServerActivity extends AppCompatActivity {
         @Override
         public boolean handleMessage(@NonNull Message msg) {
             switch (msg.what) {
+                case Constant.BLUETOOTH_TOAST:
+                    showToast(msg.getData().getString(Constant.TOAST));
+                    break;
+                case Constant.BLUETOOTH_DEVICE_NAME:
+                    tvState.setText("已连接:"+msg.getData().getString(Constant.DEVICE_NAME));
+                    break;
                 case Constant.BLUETOOTH_CONNECTED:
                     tvState.setText((String) msg.obj);
                     break;
                 case Constant.BLUETOOTH_DISCONNECTED:
-                    showToast("连接断开");
+                    showToast(msg.getData().getString(Constant.TOAST));
                     tvState.setText("连接断开");
                     break;
                 case Constant.BLUETOOTH_SEND_ERROR:
@@ -63,13 +69,13 @@ public class ServerActivity extends AppCompatActivity {
                 case Constant.BLUETOOTH_DATA_RECEIVED:
                     showToast("接受到数据");
                     SendData data = (SendData) msg.obj;
-                    Log.d(TAG, "handleMessage: "+data);
+                    Log.d(TAG, "handleMessage: " + data);
                     if (data.getType() == 0) {
                         tvReceived.setText(new String(data.getData()));
                     } else if (data.getType() == 1) {
                         Bitmap bitmap = BitmapFactory.decodeByteArray(data.getData(), 0, data.getData().length);
                         ivReceived.setImageBitmap(bitmap);
-                    }else if(data.getType() == 3){
+                    } else if (data.getType() == 3) {
 //                        tvReceived.setText();
 //                        Bitmap bitmap = BitmapFactory.decodeByteArray(data.getData(), 0, data.getData().length);
 //                        ivReceived.setImageBitmap(bitmap);

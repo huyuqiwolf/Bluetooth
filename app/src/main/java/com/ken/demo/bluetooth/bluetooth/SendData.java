@@ -19,10 +19,10 @@ public class SendData {
     public SendData(byte[] bytes) {
         if (bytes != null && bytes.length != 0) {
             this.type = bytes[0];
-            this.data = new byte[bytes.length - 2];
+            this.data = new byte[bytes.length - 2]; // 去除类型和结束标记
             System.arraycopy(bytes, 1, this.data, 0, this.data.length);
-            Log.d(TAG, "SendData: "+ Arrays.toString(data));
-            Log.d(TAG, "SendData: "+ Arrays.toString(bytes));
+            Log.d(TAG, "SendData: " + Arrays.toString(data));
+            Log.d(TAG, "SendData: " + Arrays.toString(bytes));
         } else {
             Log.d(TAG, "SendData: empty data");
         }
@@ -43,7 +43,7 @@ public class SendData {
             baos = new ByteArrayOutputStream();
             baos.write(type);
             baos.write(data, 0, data.length);
-            baos.write((byte)0x80);
+            baos.write((byte) 0x80); // 结束标记
             return baos.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();

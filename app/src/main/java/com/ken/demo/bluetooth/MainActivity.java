@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -42,7 +43,18 @@ public class MainActivity extends AppCompatActivity {
                 requestPermissions(PERMISSIONS, REQUEST_PERMISSION);
                 return;
             }
-            startActivity(new Intent(MainActivity.this, ServerActivity.class));
+            if (BluetoothAdapter.getDefaultAdapter() != null) {
+                if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+                    startActivity(new Intent(MainActivity.this, ServerActivity.class));
+                } else {
+                    startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
+                }
+            } else {
+                Toast.makeText(MainActivity.this, "找不到蓝牙设备", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+
         });
         btnClient.setOnClickListener((v) -> {
             if (!hasPermission()) {

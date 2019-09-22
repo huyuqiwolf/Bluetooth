@@ -104,16 +104,22 @@ public class BluetoothServer {
     public void sendData(byte[] data) {
         ConnectedThread thread;
         synchronized (this) {
-            if (state != STATE_CONNECTED)
-                // TODO: 2019/9/20 未连接
+            if (state != STATE_CONNECTED) {
+                Message obtain = handler.obtainMessage();
+                obtain.what = Constant.BLUETOOTH_SEND_FAILED;
+                Bundle bundle = new Bundle();
+                bundle.putString(Constant.TOAST, "未连接");
+                obtain.setData(bundle);
+                handler.sendMessage(obtain);
                 return;
+            }
             thread = connectedThread;
         }
         thread.write(data);
     }
 
     public void connectionLost() {
-        Message message = handler.obtainMessage(Constant.BLUETOOTH_TOAST);
+        Message message = handler.obtainMessage(Constant.BLUETOOTH_DISCONNECTED);
         Bundle bundle = new Bundle();
         bundle.putString(Constant.TOAST, "device connection was lost");
         message.setData(bundle);
@@ -123,7 +129,7 @@ public class BluetoothServer {
     }
 
     public void connectionFailed() {
-        Message message = handler.obtainMessage(Constant.BLUETOOTH_TOAST);
+        Message message = handler.obtainMessage(Constant.BLUETOOTH_DISCONNECTED);
         Bundle bundle = new Bundle();
         bundle.putString(Constant.TOAST, "unable to connect device");
         message.setData(bundle);
@@ -284,32 +290,21 @@ public class BluetoothServer {
         public void run() {
             super.run();
             Log.d(TAG, "run: begin connectedThread");
-            int bytes;
-//            byte[] buffer = new byte[1024];
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             while (state == STATE_CONNECTED) {
                 try {
-//                    int av = inputStream.available();
-//                    if(av != 0){
-////                        bytes = inputStream.read(buffer);
-//                        byte[] buffer = new byte[av];
-//                        inputStream.read(buffer);
-//                        SendData data = new SendData(buffer);
-//                        handler.obtainMessage(Constant.BLUETOOTH_DATA_RECEIVED, data).sendToTarget();
-//                    }
-
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    int len = -1;
+                    int len;
                     byte[] buffer = new byte[1024];
                     while ((len = inputStream.read(buffer)) != -1) {
-                        Log.d(TAG, "run: " + len + " "+inputStream.available());
+                        Log.d(TAG, "run: " + len + " " + inputStream.available());
                         baos.write(buffer, 0, len);
-                        Log.d(TAG, "run: "+buffer[len-1]);
-                        if(buffer[len-1] == (byte)0x80){
+                        Log.d(TAG, "run: " + buffer[len - 1]);
+                        if (buffer[len - 1] == (byte) 0x80) {
                             break;
                         }
                     }
                     byte[] bytes1 = baos.toByteArray();
-                    baos.close();
+                    baos.reset();
                     SendData data = new SendData(bytes1);
                     handler.obtainMessage(Constant.BLUETOOTH_DATA_RECEIVED, data).sendToTarget();
 
@@ -317,6 +312,11 @@ public class BluetoothServer {
                     Log.e(TAG, "disconnected", e);
                     connectionLost();
                     break;
+                }
+                try {
+                    baos.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "close receive buffer : ", e);
                 }
             }
         }
@@ -328,6 +328,7 @@ public class BluetoothServer {
                 handler.obtainMessage(Constant.BLUETOOTH_SEND_SUCCESS).sendToTarget();
             } catch (IOException e) {
                 Log.e(TAG, "write failed", e);
+                handler.obtainMessage(Constant.BLUETOOTH_SEND_ERROR).sendToTarget();
             }
         }
 
